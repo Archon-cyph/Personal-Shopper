@@ -24,6 +24,25 @@
 </head>
 <body>
 
+  <!-- ── ADMIN LOCK OVERLAY ── -->
+  <div id="admin-lock-overlay" class="admin-lock-overlay hidden" role="dialog" aria-modal="true" aria-label="Admin access">
+    <div class="admin-lock-box">
+      <div class="admin-lock-icon">🔐</div>
+      <h2 class="admin-lock-title">Admin Access</h2>
+      <p class="admin-lock-sub">Enter the admin password to continue.</p>
+      <input
+        class="form-input admin-lock-input"
+        type="password"
+        id="admin-password-input"
+        placeholder="Password"
+        autocomplete="current-password"
+      />
+      <p id="admin-password-error" class="admin-lock-error"></p>
+      <button class="btn btn--primary btn--full" onclick="window._adminSubmit()">Unlock</button>
+      <button class="btn btn--ghost btn--full mt-8" onclick="window._adminCancel()">Cancel</button>
+    </div>
+  </div>
+
   <!-- ── INSTALL BANNER ── -->
   <div id="install-banner" class="install-banner hidden" role="alert">
     <div class="install-banner__inner">
@@ -454,4 +473,4 @@
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
   <script src="app.js"></script>
 </body>
-</html>
+          </html>

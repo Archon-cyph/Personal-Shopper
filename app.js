@@ -153,7 +153,49 @@ function populateSettingsForm() {
    ❹ NAVIGATION
 ══════════════════════════════════════ */
 
+/* ── Admin password (change this to your desired password) ── */
+const ADMIN_PASSWORD = 'swiftcart2024';
+const ADMIN_SESSION_KEY = 'adminUnlocked';
+
+function isAdminUnlocked() {
+  return sessionStorage.getItem(ADMIN_SESSION_KEY) === '1';
+}
+
+function promptAdminPassword(onSuccess) {
+  const overlay = document.getElementById('admin-lock-overlay');
+  const input   = document.getElementById('admin-password-input');
+  const errEl   = document.getElementById('admin-password-error');
+  if (!overlay || !input) return;
+  input.value = '';
+  if (errEl) errEl.textContent = '';
+  overlay.classList.remove('hidden');
+  setTimeout(() => input.focus(), 100);
+
+  window._adminSubmit = function () {
+    if (input.value === ADMIN_PASSWORD) {
+      sessionStorage.setItem(ADMIN_SESSION_KEY, '1');
+      overlay.classList.add('hidden');
+      onSuccess();
+    } else {
+      if (errEl) errEl.textContent = 'Incorrect password. Try again.';
+      input.value = '';
+      input.focus();
+    }
+  };
+
+  window._adminCancel = function () {
+    overlay.classList.add('hidden');
+  };
+
+  input.onkeydown = e => { if (e.key === 'Enter') window._adminSubmit(); };
+}
+
 window.navigateTo = function (pageName) {
+  if (pageName === 'settings' && !isAdminUnlocked()) {
+    promptAdminPassword(() => window.navigateTo('settings'));
+    return;
+  }
+
   document.querySelectorAll('.page').forEach(p => p.classList.remove('page--active'));
   const target = document.getElementById(`page-${pageName}`);
   if (target) {
@@ -500,28 +542,44 @@ function registerServiceWorker() {
 let deferredPrompt = null;
 
 function initInstallBanner() {
+  const banner = document.getElementById('install-banner');
+  const installBtn = document.getElementById('install-btn');
+  const dismissBtn = document.getElementById('install-dismiss');
+
+  // Show banner immediately if not already installed as a PWA
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone === true;
+  const dismissed = sessionStorage.getItem('installBannerDismissed');
+
+  if (!isStandalone && !dismissed && banner) {
+    banner.classList.remove('hidden');
+  }
+
   window.addEventListener('beforeinstallprompt', e => {
     e.preventDefault();
     deferredPrompt = e;
-    document.getElementById('install-banner')?.classList.remove('hidden');
   });
 
   window.addEventListener('appinstalled', () => {
     deferredPrompt = null;
-    document.getElementById('install-banner')?.classList.add('hidden');
-    showToast('SwiftCart installed ✓', 'success');
+    banner?.classList.add('hidden');
+    showToast('SwiftCart installed \u2713', 'success');
   });
 
-  document.getElementById('install-btn')?.addEventListener('click', async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    deferredPrompt = null;
-    document.getElementById('install-banner')?.classList.add('hidden');
+  installBtn?.addEventListener('click', async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      banner?.classList.add('hidden');
+    } else {
+      showToast('Use your browser\'s "Add to Home Screen" option to install.', '', 5000);
+    }
   });
 
-  document.getElementById('install-dismiss')?.addEventListener('click', () => {
-    document.getElementById('install-banner')?.classList.add('hidden');
+  dismissBtn?.addEventListener('click', () => {
+    banner?.classList.add('hidden');
+    sessionStorage.setItem('installBannerDismissed', '1');
   });
 }
 
